@@ -56,16 +56,20 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
       border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .card-header .left {
+      display: flex;
+      flex-direction: column;
     }
     .card-header h1 {
       font-size: 20px;
       font-weight: 700;
       color: #f8fafc;
       letter-spacing: -0.3px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      margin: 0;
     }
     .card-header .sub {
       font-size: 12px;
@@ -73,22 +77,31 @@
       color: #94a3b8;
       letter-spacing: 0.2px;
     }
+    .card-header .actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
     .card-header .btn-header {
       background: rgba(255,255,255,0.08);
       border: 1px solid rgba(255,255,255,0.12);
       color: #f1f5f9;
       height: 38px;
-      padding: 0 16px;
+      padding: 0 14px;
       border-radius: 40px;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
+      white-space: nowrap;
     }
     .card-header .btn-header:active { transform: scale(0.96); background: rgba(255,255,255,0.15); }
+    .card-header .btn-header.export { background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.3); }
+    .card-header .btn-header.import { background: rgba(251, 191, 36, 0.2); border-color: rgba(251, 191, 36, 0.3); }
 
     /* ====== CARD BODY ====== */
     .card-body {
@@ -487,6 +500,11 @@
     }
     #installBtn:active { transform: scale(0.94); }
     #installBtn svg { width: 20px; height: 20px; fill: currentColor; }
+
+    /* ====== IMPORT FILE INPUT ====== */
+    #fileInput {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -497,11 +515,16 @@
   <div id="patientList">
     <div class="glass-card">
       <div class="card-header">
-        <div>
+        <div class="left">
           <h1>👩‍⚕️ Patients</h1>
           <div class="sub">Gynécologie &amp; Obstétrique</div>
         </div>
-        <button class="btn-header" onclick="showForm()">+ Ajouter</button>
+        <div class="actions">
+          <button class="btn-header" onclick="showForm()">+ Ajouter</button>
+          <button class="btn-header export" onclick="exportPatients()">📤 Exporter</button>
+          <button class="btn-header import" onclick="document.getElementById('fileInput').click()">📥 Importer</button>
+          <input type="file" id="fileInput" accept=".json" onchange="importPatients(event)" />
+        </div>
       </div>
       <div class="card-body">
         <div id="patientListContainer"></div>
@@ -868,6 +891,52 @@
   }
   function savePatients(patients) { localStorage.setItem(STORAGE_KEY, JSON.stringify(patients)); }
 
+  // ====== EXPORT / IMPORT ======
+  function exportPatients() {
+    const patients = getPatients();
+    if (patients.length === 0) {
+      alert('Aucun patient à exporter.');
+      return;
+    }
+    const blob = new Blob([JSON.stringify(patients, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'patients_export.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function importPatients(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const importedData = JSON.parse(e.target.result);
+        if (!Array.isArray(importedData)) {
+          alert('Le fichier JSON doit contenir un tableau de patients.');
+          return;
+        }
+        // Confirmation
+        if (!confirm(`Voulez-vous remplacer toutes les données actuelles (${getPatients().length} patients) par ${importedData.length} patients importés ?`)) {
+          return;
+        }
+        // Remplacer
+        savePatients(importedData);
+        renderPatientList();
+        alert('Import réussi !');
+      } catch (err) {
+        alert('Erreur lors de la lecture du fichier : ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+    // Reset l'input pour permettre de réimporter le même fichier
+    event.target.value = '';
+  }
+
   // ====== VARIABLE D'ÉDITION ======
   let editPatientId = null;
 
@@ -925,18 +994,14 @@
     document.getElementById('patientList').style.display = 'none';
     document.getElementById('patientForm').style.display = 'block';
 
-    // Mise à jour du titre et du bouton
     const title = document.getElementById('formTitle');
     const saveBtn = document.getElementById('saveBtn');
     if (editPatientId) {
       title.textContent = '✏️ Modifier le patient';
       saveBtn.textContent = 'Mettre à jour';
-      // Charger les données du patient
       const patients = getPatients();
       const patient = patients.find(p => p.id === editPatientId);
-      if (patient) {
-        fillForm(patient);
-      }
+      if (patient) fillForm(patient);
     } else {
       title.textContent = '📋 Nouveau Patient';
       saveBtn.textContent = 'Finaliser';
@@ -945,7 +1010,6 @@
 
     setDefaultDates();
     setTimeout(initTextareas, 100);
-    // Ouvrir le premier accordéon
     document.querySelectorAll('.accordion').forEach((el, i) => {
       const content = el.querySelector('.accordion-content');
       const icon = el.querySelector('.icon');
@@ -968,7 +1032,6 @@
       }
     });
 
-    // Radios et checkboxes
     const radioNames = ['cu','pde','presentation','acf','placenta','liquide'];
     radioNames.forEach(name => {
       const radios = document.querySelectorAll(`input[name="${name}"]`);
@@ -977,7 +1040,6 @@
       });
     });
 
-    // Checkboxes labstix et rcf
     ['labstix','rcf'].forEach(name => {
       const checks = document.querySelectorAll(`input[name="${name}"]`);
       const values = data[name] || [];
@@ -1044,13 +1106,11 @@
 
     let saved;
     if (editPatientId) {
-      // Mise à jour
       saved = updatePatient(editPatientId, data);
       editPatientId = null;
       showList();
       if (saved) showReport(saved);
     } else {
-      // Nouveau patient
       saved = addPatient(data);
       showList();
       showReport(saved);
