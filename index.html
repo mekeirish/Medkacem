@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+  <title>Fiche Médicale — Clinical Glass</title>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#1e293b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <style>
+    /* ====== RESET & VARIABLES ====== */
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #eef2f6;
+      margin: 0;
+      padding: 16px 12px;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      overflow-x: hidden;
+    }
+    .app {
+      max-width: 520px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* ====== GLASSMORPHISM CARD ====== */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(12px) saturate(180%);
+      -webkit-backdrop-filter: blur(12px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      border-radius: 24px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05), 0 2px 8px rgba(0, 0, 0, 0.03);
+      overflow: hidden;
+      margin-bottom: 18px;
+      transition: all 0.25s ease;
+    }
+    .glass-card:hover {
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+    }
+
+    /* ====== HEADER ====== */
+    .card-header {
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .card-header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #f8fafc;
+      letter-spacing: -0.3px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-header .sub {
+      font-size: 12px;
+      font-weight: 400;
+      color: #94a3b8;
+      letter-spacing: 0.2px;
+    }
+    .card-header .btn-header {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #f1f5f9;
+      height: 38px;
+      padding: 0 16px;
+      border-radius: 40px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .card-header .btn-header:active { transform: scale(0.96); background: rgba(255,255,255,0.15); }
+
+    /* ====== CARD BODY ====== */
+    .card-body {
+      padding: 18px 16px;
+    }
+
+    /* ====== SECTIONS ACCORDÉON ====== */
+    .accordion {
+      border-bottom: 1px solid rgba(0,0,0,0.04);
+    }
+    .accordion:last-child { border-bottom: none; }
+    .accordion-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 4px 10px 4px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s;
+    }
+    .accordion-header .title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .accordion-header .badge {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+      background: #f1f5f9;
+      padding: 2px 10px;
+      border-radius: 30px;
+    }
+    .accordion-header .icon {
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      color: #94a3b8;
+    }
+    .accordion-header .icon.open { transform: rotate(180deg); }
+    .accordion-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding 0.2s;
+      padding: 0 4px;
+    }
+    .accordion-content.open {
+      max-height: 2000px;
+      padding: 4px 4px 16px 4px;
+    }
+
+    /* ====== FORM ELEMENTS ====== */
+    .field-group {
+      margin-bottom: 14px;
+    }
+    .field-group:last-child { margin-bottom: 0; }
+    .field-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 4px;
+      letter-spacing: 0.2px;
+    }
+    .field {
+      width: 100%;
+      height: 46px;
+      background: rgba(255,255,255,0.7);
+      border: 1px solid #d1d9e6;
+      border-radius: 14px;
+      padding: 0 14px;
+      font-size: 16px !important;
+      color: #0f172a;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    .field:focus {
+      background: #fff;
+      border-color: #6366f1;
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.12);
+    }
+    textarea.field {
+      height: auto;
+      min-height: 46px;
+      padding: 10px 14px;
+      resize: none;
+      overflow: hidden;
+      line-height: 1.4;
+    }
+    .field-sm {
+      height: 38px;
+      padding: 0 10px;
+      font-size: 14px !important;
+      text-align: center;
+    }
+
+    /* ====== GRILLES ====== */
+    .grid { display: grid; gap: 10px; }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+    .col-span-2 { grid-column: span 2; }
+    .col-span-3 { grid-column: span 3; }
+
+    /* ====== GPA GROUP ====== */
+    .gpa-container {
+      display: flex;
+      align-items: center;
+      background: rgba(255,255,255,0.6);
+      border: 1px solid #d1d9e6;
+      border-radius: 14px;
+      height: 46px;
+      padding: 2px 8px;
+      justify-content: space-around;
+    }
+    .gpa-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .gpa-item span {
+      font-weight: 700;
+      font-size: 14px;
+      color: #334155;
+    }
+    .gpa-item input {
+      width: 34px;
+      height: 34px;
+      text-align: center;
+      font-size: 16px !important;
+      font-weight: 700;
+      border: 1px solid #d1d9e6;
+      border-radius: 10px;
+      background: white;
+    }
+
+    /* ====== VITAL BOX ====== */
+    .vital-box {
+      background: rgba(255,255,255,0.5);
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 10px 10px 8px;
+      transition: all 0.2s;
+    }
+    .vital-box .vital-input {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 4px;
+    }
+    .vital-box input {
+      width: 100%;
+      height: 38px;
+      text-align: center;
+      font-weight: 600;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: white;
+      font-size: 16px !important;
+    }
+    .vital-box .unit {
+      font-size: 11px;
+      color: #64748b;
+      font-weight: 600;
+      padding-right: 4px;
+    }
+
+    /* ====== PILLS / TOGGLES ====== */
+    .pill-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .pill-btn {
+      flex: 1 0 auto;
+      min-width: 60px;
+      height: 38px;
+      padding: 0 12px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid #d1d9e6;
+      background: rgba(255,255,255,0.6);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      color: #334155;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .pill-btn:active { transform: scale(0.96); }
+    .pill-btn input { margin: 0; accent-color: #6366f1; width: 16px; height: 16px; }
+    .pill-btn:has(input:checked) {
+      background: #eef2ff;
+      border-color: #6366f1;
+      color: #4338ca;
+      box-shadow: 0 0 0 2px rgba(99,102,241,0.15);
+    }
+    .pill-btn.labstix-pos:has(input:checked) { background: #d1fae5; border-color: #059669; color: #065f46; }
+    .pill-btn.labstix-neg:has(input:checked) { background: #fee2e2; border-color: #dc2626; color: #991b1b; }
+
+    /* ====== BOUTONS PRINCIPAUX ====== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      height: 48px;
+      padding: 0 20px;
+      border-radius: 40px;
+      font-weight: 700;
+      font-size: 16px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 100%;
+    }
+    .btn:active { transform: scale(0.96); }
+    .btn-primary {
+      background: linear-gradient(135deg, #4f46e5, #6366f1);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(99,102,241,0.25);
+    }
+    .btn-primary:hover { box-shadow: 0 6px 24px rgba(99,102,241,0.35); }
+    .btn-secondary {
+      background: rgba(241,245,249,0.8);
+      color: #1e293b;
+      border: 1px solid #d1d9e6;
+    }
+    .btn-danger {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 20px;
+      padding: 4px 8px;
+      cursor: pointer;
+    }
+    .btn-danger:active { color: #ef4444; background: #fee2e2; border-radius: 8px; }
+
+    /* ====== PATIENT LIST ====== */
+    .patient-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255,255,255,0.5);
+      backdrop-filter: blur(4px);
+      border-radius: 14px;
+      padding: 8px 14px;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 8px;
+      transition: all 0.15s;
+    }
+    .patient-item:active { transform: scale(0.98); }
+    .patient-item .name {
+      font-weight: 600;
+      font-size: 16px;
+      background: none;
+      border: none;
+      padding: 8px 0;
+      cursor: pointer;
+      text-align: left;
+      color: #0f172a;
+      flex: 1;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 40px 10px;
+      color: #94a3b8;
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    /* ====== MODAL RAPPORT ====== */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(15,23,42,0.5);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+      padding: 16px;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 28px;
+      width: 100%;
+      max-width: 520px;
+      max-height: 92vh;
+      overflow-y: auto;
+      padding: 20px;
+      border: 1px solid rgba(255,255,255,0.5);
+      box-shadow: 0 24px 64px rgba(0,0,0,0.10);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      margin-bottom: 16px;
+    }
+    .modal-header h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    /* ====== RAPPORT STRUCTURE ====== */
+    .report-container {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .report-group {
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      overflow: hidden;
+      background: rgba(255,255,255,0.3);
+    }
+    .report-group-title {
+      background: #f1f5f9;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #1e293b;
+      border-bottom: 1px solid #e2e8f0;
+      letter-spacing: 0.3px;
+    }
+    .report-row {
+      display: flex;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .report-row:last-child { border-bottom: none; }
+    .report-key {
+      width: 34%;
+      padding: 8px 12px;
+      background: #fafcff;
+      border-right: 1px solid #e2e8f0;
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      display: flex;
+      align-items: center;
+    }
+    .report-val {
+      width: 66%;
+      padding: 8px 12px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #0f172a;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* ====== PRINT ====== */
+    @media print {
+      body { background: #fff; padding: 0; }
+      .no-print { display: none !important; }
+      .modal-overlay { position: static; background: none; backdrop-filter: none; display: flex !important; }
+      .modal { max-height: none; border-radius: 0; padding: 16px; box-shadow: none; background: #fff; }
+      .report-group { border-color: #000; }
+      .report-group-title, .report-key { background: #f0f0f0 !important; color: #000; border-color: #000; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .report-row, .report-key { border-color: #000; }
+    }
+
+    /* ====== INSTALL BUTTON ====== */
+    #installBtn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #4f46e5;
+      color: #fff;
+      border: none;
+      border-radius: 60px;
+      padding: 12px 20px;
+      font-size: 15px;
+      font-weight: 700;
+      box-shadow: 0 6px 24px rgba(79,70,229,0.35);
+      display: none;
+      align-items: center;
+      gap: 8px;
+      z-index: 9999;
+      cursor: pointer;
+      transition: all 0.2s;
+      backdrop-filter: blur(4px);
+    }
+    #installBtn:active { transform: scale(0.94); }
+    #installBtn svg { width: 20px; height: 20px; fill: currentColor; }
+  </style>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#4b6cb7">
+<link rel="apple-touch-icon" href="icon.png"></head>
+<body>
+
+<div class="app">
+
+  <!-- ====== LISTE PATIENTS ====== -->
+  <div id="patientList">
+    <div class="glass-card">
+      <div class="card-header">
+        <div>
+          <h1>👩‍⚕️ Patients</h1>
+          <div class="sub">Gynécologie &amp; Obstétrique</div>
+        </div>
+        <button class="btn-header" onclick="showForm()">+ Ajouter</button>
+      </div>
+      <div class="card-body">
+        <div id="patientListContainer"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== FORMULAIRE ====== -->
+  <div id="patientForm" style="display:none;">
+    <div class="glass-card">
+      <div class="card-header">
+        <h1 style="font-size:18px;">📋 Nouveau Patient</h1>
+        <button class="btn-header" onclick="showList()">Retour</button>
+      </div>
+      <div class="card-body">
+
+        <!-- ACCORDÉON 1 : Identité -->
+        <div class="accordion open">
+          <div class="accordion-header" onclick="toggleAccordion(this)">
+            <span class="title">👤 Identité &amp; Suivi</span>
+            <span class="badge">Étape 1/4</span>
+            <span class="icon">▼</span>
+          </div>
+          <div class="accordion-content open">
+            <div class="field-group">
+              <div class="grid grid-3">
+                <div class="col-span-2">
+                  <label>Nom &amp; Prénom</label>
+                  <input type="text" id="nom" placeholder="Nom de la patiente" class="field" />
+                </div>
+                <div>
+                  <label>Âge (ans)</label>
+                  <input type="text" id="age" placeholder="28" inputmode="numeric" class="field" />
+                </div>
+              </div>
+              <div class="grid grid-2" style="margin-top:12px;">
+                <div>
+                  <label>Groupe / Rhésus</label>
+                  <input type="text" id="g_rhs" placeholder="Ex: A+" class="field" />
+                </div>
+                <div>
+                  <label>Gestité / Parité</label>
+                  <div class="gpa-container">
+                    <div class="gpa-item"><span>G</span><input type="text" id="g" inputmode="numeric" /></div>
+                    <div class="gpa-item"><span>P</span><input type="text" id="p" inputmode="numeric" /></div>
+                    <div class="gpa-item"><span>A</span><input type="text" id="a" inputmode="numeric" /></div>
+                  </div>
+                </div>
+              </div>
+              <div class="grid grid-4" style="margin-top:12px;">
+                <div><label>DDR</label><input type="date" id="ddr" class="field field-sm" /></div>
+                <div><label>TT</label><input type="text" id="tt" placeholder="Terme" class="field field-sm" /></div>
+                <div><label>TC</label><input type="text" id="tc" placeholder="Corr." class="field field-sm" /></div>
+                <div><label>TE</label><input type="text" id="te" placeholder="Écho" class="field field-sm" /></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACCORDÉON 2 : Motif & ATCD -->
+        <div class="accordion">
+          <div class="accordion-header" onclick="toggleAccordion(this)">
+            <span class="title">📌 Motif &amp; Antécédents</span>
+            <span class="badge">Étape 2/4</span>
+            <span class="icon">▼</span>
+          </div>
+          <div class="accordion-content">
+            <div class="field-group">
+              <label>Motif d'admission</label>
+              <textarea id="motif" placeholder="Raison principale de la consultation..." class="field"></textarea>
+            </div>
+            <div class="grid grid-2">
+              <div class="field-group">
+                <label>ATCD Pathologiques</label>
+                <textarea id="atcd_med" placeholder="Médicaux, chir..." class="field"></textarea>
+              </div>
+              <div class="field-group">
+                <label>ATCD Obstétricaux</label>
+                <textarea id="atcd_obs" placeholder="Accouchements..." class="field"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACCORDÉON 3 : Examen Clinique -->
+        <div class="accordion">
+          <div class="accordion-header" onclick="toggleAccordion(this)">
+            <span class="title">🩺 Examen Clinique</span>
+            <span class="badge">Étape 3/4</span>
+            <span class="icon">▼</span>
+          </div>
+          <div class="accordion-content">
+            <div class="field-group">
+              <div class="grid grid-2">
+                <div class="vital-box">
+                  <label>Tension Artérielle</label>
+                  <div class="vital-input">
+                    <input type="text" id="ta" placeholder="120/80" />
+                    <span class="unit">mmHg</span>
+                  </div>
+                </div>
+                <div class="vital-box">
+                  <label>Pouls</label>
+                  <div class="vital-input">
+                    <input type="text" id="pouls" placeholder="75" inputmode="numeric" />
+                    <span class="unit">bpm</span>
+                  </div>
+                </div>
+                <div class="vital-box">
+                  <label>Température</label>
+                  <div class="vital-input">
+                    <input type="text" id="temp" placeholder="37" inputmode="decimal" />
+                    <span class="unit">°C</span>
+                  </div>
+                </div>
+                <div class="vital-box">
+                  <label>Labstix</label>
+                  <div class="pill-group" style="margin-top:4px;">
+                    <label class="pill-btn labstix-pos"><input type="checkbox" name="labstix" value="Positif (+)" /> +</label>
+                    <label class="pill-btn labstix-neg"><input type="checkbox" name="labstix" value="Négatif (-)" /> −</label>
+                  </div>
+                </div>
+              </div>
+              <div class="grid grid-2" style="margin-top:12px;">
+                <div>
+                  <label>Hauteur Utérine (HU)</label>
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <input type="text" id="hu" placeholder="32" inputmode="numeric" class="field" style="text-align:center;" />
+                    <span style="font-weight:bold; font-size:14px; color:#475569;">cm</span>
+                  </div>
+                </div>
+                <div>
+                  <label>Contractions (CU)</label>
+                  <div class="pill-group">
+                    <label class="pill-btn"><input type="radio" name="cu" value="Oui" /> Oui</label>
+                    <label class="pill-btn"><input type="radio" name="cu" value="Non" /> Non</label>
+                  </div>
+                </div>
+              </div>
+              <div style="margin-top:12px;">
+                <label>RCF (Rythme Cardiaque Fœtal)</label>
+                <div class="pill-group">
+                  <label class="pill-btn"><input type="checkbox" name="rcf" value="Normal" /> Normal</label>
+                  <label class="pill-btn"><input type="checkbox" name="rcf" value="Micro-oscillations" /> Micro-osc.</label>
+                  <label class="pill-btn"><input type="checkbox" name="rcf" value="Ralentissements" /> Ralent.</label>
+                </div>
+              </div>
+              <div style="margin-top:12px;">
+                <label>Toucher Vaginal (TV)</label>
+                <textarea id="tv" placeholder="Col effacé, dilaté, consistance..." class="field"></textarea>
+              </div>
+              <div style="margin-top:12px;">
+                <label>Poche Des Eaux (PDE)</label>
+                <div class="pill-group" style="margin-bottom:6px;">
+                  <label class="pill-btn"><input type="radio" name="pde" value="Intacte" /> Intacte</label>
+                  <label class="pill-btn"><input type="radio" name="pde" value="Rompue" /> Rompue</label>
+                </div>
+                <div class="grid grid-2">
+                  <input type="time" id="pde_heure" class="field field-sm" />
+                  <input type="text" id="pde_aspect" placeholder="Aspect (Clair...)" class="field field-sm" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACCORDÉON 4 : Bilan & Écho -->
+        <div class="accordion">
+          <div class="accordion-header" onclick="toggleAccordion(this)">
+            <span class="title">🧪 Bilan &amp; Échographie</span>
+            <span class="badge">Étape 4/4</span>
+            <span class="icon">▼</span>
+          </div>
+          <div class="accordion-content">
+            <div class="field-group">
+              <label>Numération Formule Sanguine</label>
+              <div class="grid grid-3">
+                <div><label class="text-xs" style="font-weight:500; color:#64748b;">Hb (g/dL)</label><input type="text" id="hb" placeholder="12" inputmode="decimal" class="field field-sm" /></div>
+                <div><label class="text-xs" style="font-weight:500; color:#64748b;">Plq</label><input type="text" id="plq" placeholder="250k" inputmode="numeric" class="field field-sm" /></div>
+                <div><label class="text-xs" style="font-weight:500; color:#64748b;">GB</label><input type="text" id="gb" placeholder="8k" inputmode="numeric" class="field field-sm" /></div>
+              </div>
+              <div class="grid grid-2" style="margin-top:10px;">
+                <div><label>Hémostase</label><textarea id="hemostase" placeholder="TP, TCA..." class="field"></textarea></div>
+                <div><label>Ionogramme</label><textarea id="ionogramme" placeholder="Na+, K+..." class="field"></textarea></div>
+              </div>
+              <div style="margin-top:10px;">
+                <label>Biochimie</label>
+                <div class="grid grid-4">
+                  <input type="text" id="uree" placeholder="Urée" inputmode="decimal" class="field field-sm" />
+                  <input type="text" id="creat" placeholder="Créat" inputmode="decimal" class="field field-sm" />
+                  <input type="text" id="tgo" placeholder="TGO" inputmode="decimal" class="field field-sm" />
+                  <input type="text" id="tgp" placeholder="TGP" inputmode="decimal" class="field field-sm" />
+                </div>
+              </div>
+              <div class="grid grid-2" style="margin-top:10px;">
+                <div><label>Sérologies</label><textarea id="serologies" placeholder="Toxo, Rub..." class="field"></textarea></div>
+                <div><label>Autres</label><textarea id="autres" placeholder="Examens..." class="field"></textarea></div>
+              </div>
+
+              <!-- NOUVEAU CHAMP : Avis spécialisés -->
+              <div style="margin-top:14px; border-top:1px dashed #d1d9e6; padding-top:12px;">
+                <label>Avis spécialisés (consultations, avis d'experts...)</label>
+                <textarea id="avis_specialises" placeholder="Saisir ici les avis spécialisés..." class="field"></textarea>
+              </div>
+            </div>
+
+            <div class="field-group" style="margin-top:16px; border-top:1px solid #e2e8f0; padding-top:16px;">
+              <label>Échographie</label>
+              <div style="margin-bottom:8px;">
+                <label class="text-xs" style="font-weight:500; color:#64748b;">Présentation</label>
+                <div class="pill-group">
+                  <label class="pill-btn"><input type="radio" name="presentation" value="Céphalique" /> Céphalique</label>
+                  <label class="pill-btn"><input type="radio" name="presentation" value="Siège" /> Siège</label>
+                  <label class="pill-btn"><input type="radio" name="presentation" value="Transverse" /> Transverse</label>
+                </div>
+              </div>
+              <div style="margin-bottom:8px;">
+                <label class="text-xs" style="font-weight:500; color:#64748b;">Activité Cardiaque (ACF)</label>
+                <div class="grid grid-3">
+                  <div class="pill-group col-span-2">
+                    <label class="pill-btn"><input type="radio" name="acf" value="Présente" /> Présente</label>
+                    <label class="pill-btn"><input type="radio" name="acf" value="Absente" /> Absente</label>
+                  </div>
+                  <input type="text" id="bpm" placeholder="140 BPM" inputmode="numeric" class="field field-sm" />
+                </div>
+              </div>
+              <div style="margin-bottom:8px;">
+                <label class="text-xs" style="font-weight:500; color:#64748b;">Placenta</label>
+                <div class="pill-group">
+                  <label class="pill-btn"><input type="radio" name="placenta" value="Fondique" /> Fondique</label>
+                  <label class="pill-btn"><input type="radio" name="placenta" value="Antérieur" /> Antérieur</label>
+                  <label class="pill-btn"><input type="radio" name="placenta" value="Postérieur" /> Postérieur</label>
+                  <label class="pill-btn"><input type="radio" name="placenta" value="Bas inséré" /> Bas inséré</label>
+                </div>
+              </div>
+              <div class="grid grid-3">
+                <div class="col-span-2">
+                  <label class="text-xs" style="font-weight:500; color:#64748b;">Liquide Amniotique</label>
+                  <div class="pill-group">
+                    <label class="pill-btn"><input type="radio" name="liquide" value="Normal" /> Normal</label>
+                    <label class="pill-btn"><input type="radio" name="liquide" value="Oligo." /> Oligo.</label>
+                    <label class="pill-btn"><input type="radio" name="liquide" value="Hydram." /> Hydram.</label>
+                  </div>
+                </div>
+                <div>
+                  <label class="text-xs" style="font-weight:500; color:#64748b;">EPF</label>
+                  <input type="text" id="epf" placeholder="3200g" inputmode="numeric" class="field" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="grid grid-2" style="margin-top:20px;">
+          <button class="btn btn-secondary" onclick="showList()">Annuler</button>
+          <button class="btn btn-primary" onclick="saveAndShowReport()">Finaliser</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ====== MODAL RAPPORT ====== -->
+<div class="modal-overlay" id="modalRapport">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>📄 Rapport d'admission</h2>
+      <button class="btn-danger no-print" onclick="fermerModal()">✕</button>
+    </div>
+    <div id="print-section">
+      <div style="text-align:center; margin-bottom:16px;">
+        <span style="font-size:13px; color:#4f46e5; font-weight:700; background:#eef2ff; padding:4px 14px; border-radius:40px;" id="out-date">Date</span>
+      </div>
+      <div class="report-container">
+        <div class="report-group">
+          <div class="report-group-title">Identité &amp; Suivi</div>
+          <div class="report-row"><div class="report-key">Nom &amp; Prénom</div><div class="report-val" id="out-nom">-</div></div>
+          <div class="report-row"><div class="report-key">Âge</div><div class="report-val" id="out-age">-</div></div>
+          <div class="report-row"><div class="report-key">Groupe / Rhésus</div><div class="report-val" id="out-g_rhs">-</div></div>
+          <div class="report-row"><div class="report-key">G P A</div><div class="report-val" id="out-gpa">-</div></div>
+          <div class="report-row"><div class="report-key">Termes</div><div class="report-val" id="out-termes">-</div></div>
+        </div>
+        <div class="report-group">
+          <div class="report-group-title">Motif &amp; Antécédents</div>
+          <div class="report-row"><div class="report-key">Motif</div><div class="report-val" id="out-motif">-</div></div>
+          <div class="report-row"><div class="report-key">ATCD Médicaux</div><div class="report-val" id="out-atcd_med">-</div></div>
+          <div class="report-row"><div class="report-key">ATCD Obstétricaux</div><div class="report-val" id="out-atcd_obs">-</div></div>
+        </div>
+        <div class="report-group">
+          <div class="report-group-title">Examen Clinique</div>
+          <div class="report-row"><div class="report-key">Constantes</div><div class="report-val" id="out-constantes">-</div></div>
+          <div class="report-row"><div class="report-key">HU / CU</div><div class="report-val" id="out-obstetrical">-</div></div>
+          <div class="report-row"><div class="report-key">RCF</div><div class="report-val" id="out-rcf">-</div></div>
+          <div class="report-row"><div class="report-key">Toucher Vaginal</div><div class="report-val" id="out-tv">-</div></div>
+          <div class="report-row"><div class="report-key">Poche des Eaux</div><div class="report-val" id="out-pde">-</div></div>
+        </div>
+        <div class="report-group">
+          <div class="report-group-title">Bilan Biologique</div>
+          <div class="report-row"><div class="report-key">NFS</div><div class="report-val" id="out-nfs">-</div></div>
+          <div class="report-row"><div class="report-key">Hémostase / Iono</div><div class="report-val" id="out-hemo-iono">-</div></div>
+          <div class="report-row"><div class="report-key">Biochimie</div><div class="report-val" id="out-biochimie">-</div></div>
+          <div class="report-row"><div class="report-key">Sérologies / Autres</div><div class="report-val" id="out-sero-autres">-</div></div>
+        </div>
+        <!-- NOUVEAU BLOC : Avis spécialisés -->
+        <div class="report-group">
+          <div class="report-group-title">Avis spécialisés</div>
+          <div class="report-row"><div class="report-key">Consultations / avis</div><div class="report-val" id="out-avis">-</div></div>
+        </div>
+        <div class="report-group">
+          <div class="report-group-title">Échographie</div>
+          <div class="report-row"><div class="report-key">Présentation</div><div class="report-val" id="out-presentation">-</div></div>
+          <div class="report-row"><div class="report-key">Activité Cardiaque</div><div class="report-val" id="out-acf">-</div></div>
+          <div class="report-row"><div class="report-key">Placenta / Liquide</div><div class="report-val" id="out-placenta-liq">-</div></div>
+          <div class="report-row"><div class="report-key">EPF</div><div class="report-val" id="out-epf">-</div></div>
+        </div>
+      </div>
+      <div style="margin-top:16px; text-align:right; padding-top:8px; border-top:1px solid #e2e8f0;">
+        <span style="font-size:13px; font-weight:700; color:#1e293b;">Dr. Kacem Khaled</span>
+      </div>
+    </div>
+    <div class="grid grid-2 no-print" style="margin-top:20px;">
+      <button class="btn btn-secondary" onclick="fermerModal()">Fermer</button>
+      <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimer</button>
+    </div>
+  </div>
+</div>
+
+<!-- BOUTON INSTALLATION -->
+<button id="installBtn">
+  <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+  Installer
+</button>
+
+<script>
+  // ====== ACCORDÉON ======
+  function toggleAccordion(header) {
+    const content = header.parentElement.querySelector('.accordion-content');
+    const icon = header.querySelector('.icon');
+    if (content) {
+      content.classList.toggle('open');
+      if (icon) icon.classList.toggle('open');
+    }
+  }
+
+  // ====== AUTO-RESIZE TEXTAREAS ======
+  function autoResizeTextarea() {
+    this.style.height = '46px';
+    this.style.height = (this.scrollHeight) + 'px';
+  }
+  function initTextareas() {
+    document.querySelectorAll('textarea.field').forEach(el => {
+      el.removeEventListener('input', autoResizeTextarea);
+      el.addEventListener('input', autoResizeTextarea);
+      autoResizeTextarea.call(el);
+    });
+  }
+
+  // ====== GESTION DONNÉES ======
+  const STORAGE_KEY = 'patientsList';
+
+  function getPatients() {
+    try { const data = localStorage.getItem(STORAGE_KEY); return data ? JSON.parse(data) : []; } catch { return []; }
+  }
+  function savePatients(patients) { localStorage.setItem(STORAGE_KEY, JSON.stringify(patients)); }
+
+  function addPatient(data) {
+    const patients = getPatients();
+    data.id = Date.now().toString(36) + Math.random().toString(36).substr(2,5);
+    patients.push(data);
+    savePatients(patients);
+    return data;
+  }
+
+  function deletePatient(id) {
+    let patients = getPatients();
+    patients = patients.filter(p => p.id !== id);
+    savePatients(patients);
+    renderPatientList();
+  }
+
+  function renderPatientList() {
+    const container = document.getElementById('patientListContainer');
+    const patients = getPatients();
+    if (patients.length === 0) {
+      container.innerHTML = `<div class="empty-state">Aucun patient enregistré.<br>Cliquez sur « Ajouter » pour commencer.</div>`;
+      return;
+    }
+    let html = '';
+    patients.forEach(p => {
+      const name = p.nom && p.nom.trim() !== '' ? p.nom : 'Patient sans nom';
+      html += `
+        <div class="patient-item">
+          <button class="name" onclick="viewPatient('${p.id}')">${name}</button>
+          <button class="btn-danger" onclick="confirmDelete('${p.id}')">✕</button>
+        </div>
+      `;
+    });
+    container.innerHTML = html;
+  }
+
+  function confirmDelete(id) { if (confirm('Supprimer ce patient ?')) deletePatient(id); }
+
+  // ====== NAVIGATION ======
+  function showForm() {
+    document.getElementById('patientList').style.display = 'none';
+    document.getElementById('patientForm').style.display = 'block';
+    clearForm();
+    setDefaultDates();
+    setTimeout(initTextareas, 100);
+    document.querySelectorAll('.accordion').forEach((el, i) => {
+      const content = el.querySelector('.accordion-content');
+      const icon = el.querySelector('.icon');
+      if (i === 0) {
+        content.classList.add('open');
+        if (icon) icon.classList.add('open');
+      } else {
+        content.classList.remove('open');
+        if (icon) icon.classList.remove('open');
+      }
+    });
+  }
+
+  function showList() {
+    document.getElementById('patientList').style.display = 'block';
+    document.getElementById('patientForm').style.display = 'none';
+    renderPatientList();
+  }
+
+  function clearForm() {
+    const fields = ['nom','age','g_rhs','g','p','a','ddr','tt','tc','te','motif','atcd_med','atcd_obs','ta','pouls','temp','hu','tv','pde_aspect','uree','creat','tgo','tgp','hemostase','ionogramme','serologies','autres','hb','plq','gb','epf','bpm','avis_specialises'];
+    fields.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    document.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(el => { el.checked = false; });
+    document.querySelectorAll('textarea.field').forEach(el => el.style.height = '46px');
+  }
+
+  function setDefaultDates() {
+    const today = new Date().toISOString().split('T')[0];
+    const ddrField = document.getElementById('ddr');
+    if (ddrField) ddrField.value = today;
+    const pdeHeureField = document.getElementById('pde_heure');
+    if (pdeHeureField) {
+      const now = new Date();
+      pdeHeureField.value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    }
+  }
+
+  // ====== COLLECTE / SAUVEGARDE ======
+  function collectFormData() {
+    function val(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+    function radio(name) { const sel = document.querySelector(`input[name="${name}"]:checked`); return sel ? sel.value : ''; }
+    function checkboxes(name) { const checked = document.querySelectorAll(`input[name="${name}"]:checked`); return Array.from(checked).map(c => c.value); }
+    return {
+      date: new Date().toLocaleString('fr-FR'),
+      nom: val('nom'), age: val('age'), g_rhs: val('g_rhs'),
+      g: val('g'), p: val('p'), a: val('a'), ddr: val('ddr'), tt: val('tt'), tc: val('tc'), te: val('te'),
+      motif: val('motif'), atcd_med: val('atcd_med'), atcd_obs: val('atcd_obs'),
+      ta: val('ta'), pouls: val('pouls'), temp: val('temp'), labstix: checkboxes('labstix'),
+      hu: val('hu'), cu: radio('cu'), rcf: checkboxes('rcf'), tv: val('tv'),
+      pde: radio('pde'), pde_heure: val('pde_heure'), pde_aspect: val('pde_aspect'),
+      hb: val('hb'), plq: val('plq'), gb: val('gb'),
+      hemostase: val('hemostase'), uree: val('uree'), creat: val('creat'), tgo: val('tgo'), tgp: val('tgp'),
+      ionogramme: val('ionogramme'), serologies: val('serologies'), autres: val('autres'),
+      avis_specialises: val('avis_specialises'), // NOUVEAU
+      presentation: radio('presentation'), acf: radio('acf'), bpm: val('bpm'),
+      placenta: radio('placenta'), liquide: radio('liquide'), epf: val('epf')
+    };
+  }
+
+  function saveAndShowReport() {
+    const data = collectFormData();
+    if (!data.nom && !confirm('Le nom est vide. Continuer ?')) return;
+    const saved = addPatient(data);
+    showList();
+    showReport(saved);
+  }
+
+  function viewPatient(id) {
+    const patients = getPatients();
+    const patient = patients.find(p => p.id === id);
+    if (patient) showReport(patient);
+  }
+
+  function showReport(data) {
+    const setText = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = (val && val.trim() !== '') ? val : '-';
+    };
+    setText('out-date', `Édité le ${data.date || '-'}`);
+    setText('out-nom', data.nom);
+    setText('out-age', data.age ? `${data.age} ans` : '-');
+    setText('out-g_rhs', data.g_rhs);
+    setText('out-gpa', (data.g || data.p || data.a) ? `G:${data.g||'-'} P:${data.p||'-'} A:${data.a||'-'}` : '-');
+    let termes = [];
+    if(data.ddr) termes.push(`DDR: ${data.ddr}`);
+    if(data.tt) termes.push(`TT: ${data.tt}`);
+    if(data.tc) termes.push(`TC: ${data.tc}`);
+    if(data.te) termes.push(`TE: ${data.te}`);
+    setText('out-termes', termes.length ? termes.join('  |  ') : '-');
+    setText('out-motif', data.motif);
+    setText('out-atcd_med', data.atcd_med);
+    setText('out-atcd_obs', data.atcd_obs);
+    let constList = [];
+    if (data.ta) constList.push(`TA: ${data.ta} mmHg`);
+    if (data.pouls) constList.push(`Pouls: ${data.pouls} bpm`);
+    if (data.temp) constList.push(`T°: ${data.temp} °C`);
+    if (data.labstix && data.labstix.length) constList.push(`Labstix: ${data.labstix.join(', ')}`);
+    setText('out-constantes', constList.join('  |  '));
+    let obsList = [];
+    if (data.hu) obsList.push(`HU: ${data.hu} cm`);
+    if (data.cu) obsList.push(`CU: ${data.cu}`);
+    setText('out-obstetrical', obsList.join('  |  '));
+    setText('out-rcf', data.rcf && data.rcf.length ? data.rcf.join(', ') : '-');
+    setText('out-tv', data.tv);
+    let pdeList = [];
+    if (data.pde) pdeList.push(data.pde);
+    if (data.pde_heure) pdeList.push(`à ${data.pde_heure}`);
+    if (data.pde_aspect) pdeList.push(`(${data.pde_aspect})`);
+    setText('out-pde', pdeList.join(' '));
+    let nfs = [];
+    if (data.hb) nfs.push(`Hb: ${data.hb} g/dL`);
+    if (data.plq) nfs.push(`Plq: ${data.plq}`);
+    if (data.gb) nfs.push(`GB: ${data.gb}`);
+    setText('out-nfs', nfs.join('  |  '));
+    let hemoIono = [];
+    if (data.hemostase) hemoIono.push(`Hémostase: ${data.hemostase}`);
+    if (data.ionogramme) hemoIono.push(`Iono: ${data.ionogramme}`);
+    setText('out-hemo-iono', hemoIono.join('  |  '));
+    let bio = [];
+    if (data.uree) bio.push(`Urée: ${data.uree}`);
+    if (data.creat) bio.push(`Créat: ${data.creat}`);
+    if (data.tgo) bio.push(`TGO: ${data.tgo}`);
+    if (data.tgp) bio.push(`TGP: ${data.tgp}`);
+    setText('out-biochimie', bio.join('  |  '));
+    let seroAutres = [];
+    if (data.serologies) seroAutres.push(`Sérologies: ${data.serologies}`);
+    if (data.autres) seroAutres.push(`Autres: ${data.autres}`);
+    setText('out-sero-autres', seroAutres.join('  |  '));
+    // Avis spécialisés
+    setText('out-avis', data.avis_specialises);
+    setText('out-presentation', data.presentation);
+    setText('out-acf', data.acf ? `${data.acf}${data.bpm ? ' ('+data.bpm+' BPM)' : ''}` : '-');
+    let plaLiq = [];
+    if(data.placenta) plaLiq.push(`Placenta: ${data.placenta}`);
+    if(data.liquide) plaLiq.push(`Liquide: ${data.liquide}`);
+    setText('out-placenta-liq', plaLiq.join('  |  '));
+    setText('out-epf', data.epf ? `${data.epf} g` : '-');
+    document.getElementById('modalRapport').classList.add('active');
+  }
+
+  function fermerModal() { document.getElementById('modalRapport').classList.remove('active'); }
+  document.getElementById('modalRapport').addEventListener('click', function(e) {
+    if (e.target === this) fermerModal();
+  });
+
+  // ====== INSTALLATION PWA ======
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('installBtn').style.display = 'flex';
+  });
+  document.getElementById('installBtn').addEventListener('click', async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const result = await deferredPrompt.userChoice;
+      if (result.outcome === 'accepted') document.getElementById('installBtn').style.display = 'none';
+      deferredPrompt = null;
+    }
+  });
+
+  // ====== INIT ======
+  document.addEventListener('DOMContentLoaded', function() {
+    showList();
+    initTextareas();
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(err => console.error('SW err:', err));
+    }
+  });
+</script>
+
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));}</script>
+</body>
+</html>
