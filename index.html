@@ -488,10 +488,7 @@
     #installBtn:active { transform: scale(0.94); }
     #installBtn svg { width: 20px; height: 20px; fill: currentColor; }
   </style>
-
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#4b6cb7">
-<link rel="apple-touch-icon" href="icon.png"></head>
+</head>
 <body>
 
 <div class="app">
@@ -516,8 +513,8 @@
   <div id="patientForm" style="display:none;">
     <div class="glass-card">
       <div class="card-header">
-        <h1 style="font-size:18px;">📋 Nouveau Patient</h1>
-        <button class="btn-header" onclick="showList()">Retour</button>
+        <h1 style="font-size:18px;" id="formTitle">📋 Nouveau Patient</h1>
+        <button class="btn-header" onclick="cancelEdit()">Retour</button>
       </div>
       <div class="card-body">
 
@@ -703,8 +700,6 @@
                 <div><label>Sérologies</label><textarea id="serologies" placeholder="Toxo, Rub..." class="field"></textarea></div>
                 <div><label>Autres</label><textarea id="autres" placeholder="Examens..." class="field"></textarea></div>
               </div>
-
-              <!-- NOUVEAU CHAMP : Avis spécialisés -->
               <div style="margin-top:14px; border-top:1px dashed #d1d9e6; padding-top:12px;">
                 <label>Avis spécialisés (consultations, avis d'experts...)</label>
                 <textarea id="avis_specialises" placeholder="Saisir ici les avis spécialisés..." class="field"></textarea>
@@ -760,8 +755,8 @@
 
         <!-- ACTIONS -->
         <div class="grid grid-2" style="margin-top:20px;">
-          <button class="btn btn-secondary" onclick="showList()">Annuler</button>
-          <button class="btn btn-primary" onclick="saveAndShowReport()">Finaliser</button>
+          <button class="btn btn-secondary" onclick="cancelEdit()">Annuler</button>
+          <button class="btn btn-primary" id="saveBtn" onclick="saveAndShowReport()">Finaliser</button>
         </div>
 
       </div>
@@ -811,7 +806,6 @@
           <div class="report-row"><div class="report-key">Biochimie</div><div class="report-val" id="out-biochimie">-</div></div>
           <div class="report-row"><div class="report-key">Sérologies / Autres</div><div class="report-val" id="out-sero-autres">-</div></div>
         </div>
-        <!-- NOUVEAU BLOC : Avis spécialisés -->
         <div class="report-group">
           <div class="report-group-title">Avis spécialisés</div>
           <div class="report-row"><div class="report-key">Consultations / avis</div><div class="report-val" id="out-avis">-</div></div>
@@ -828,8 +822,9 @@
         <span style="font-size:13px; font-weight:700; color:#1e293b;">Dr. Kacem Khaled</span>
       </div>
     </div>
-    <div class="grid grid-2 no-print" style="margin-top:20px;">
+    <div class="grid grid-3 no-print" style="margin-top:20px; gap:8px;">
       <button class="btn btn-secondary" onclick="fermerModal()">Fermer</button>
+      <button class="btn btn-secondary" id="editBtn" onclick="editCurrentPatient()" style="background:#eef2ff; border-color:#6366f1; color:#4338ca;">✏️ Éditer</button>
       <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimer</button>
     </div>
   </div>
@@ -873,12 +868,26 @@
   }
   function savePatients(patients) { localStorage.setItem(STORAGE_KEY, JSON.stringify(patients)); }
 
+  // ====== VARIABLE D'ÉDITION ======
+  let editPatientId = null;
+
   function addPatient(data) {
     const patients = getPatients();
     data.id = Date.now().toString(36) + Math.random().toString(36).substr(2,5);
     patients.push(data);
     savePatients(patients);
     return data;
+  }
+
+  function updatePatient(id, newData) {
+    let patients = getPatients();
+    const index = patients.findIndex(p => p.id === id);
+    if (index !== -1) {
+      patients[index] = { ...patients[index], ...newData };
+      savePatients(patients);
+      return patients[index];
+    }
+    return null;
   }
 
   function deletePatient(id) {
@@ -911,12 +920,32 @@
   function confirmDelete(id) { if (confirm('Supprimer ce patient ?')) deletePatient(id); }
 
   // ====== NAVIGATION ======
-  function showForm() {
+  function showForm(patientId) {
+    editPatientId = patientId || null;
     document.getElementById('patientList').style.display = 'none';
     document.getElementById('patientForm').style.display = 'block';
-    clearForm();
+
+    // Mise à jour du titre et du bouton
+    const title = document.getElementById('formTitle');
+    const saveBtn = document.getElementById('saveBtn');
+    if (editPatientId) {
+      title.textContent = '✏️ Modifier le patient';
+      saveBtn.textContent = 'Mettre à jour';
+      // Charger les données du patient
+      const patients = getPatients();
+      const patient = patients.find(p => p.id === editPatientId);
+      if (patient) {
+        fillForm(patient);
+      }
+    } else {
+      title.textContent = '📋 Nouveau Patient';
+      saveBtn.textContent = 'Finaliser';
+      clearForm();
+    }
+
     setDefaultDates();
     setTimeout(initTextareas, 100);
+    // Ouvrir le premier accordéon
     document.querySelectorAll('.accordion').forEach((el, i) => {
       const content = el.querySelector('.accordion-content');
       const icon = el.querySelector('.icon');
@@ -928,6 +957,39 @@
         if (icon) icon.classList.remove('open');
       }
     });
+  }
+
+  function fillForm(data) {
+    const fields = ['nom','age','g_rhs','g','p','a','ddr','tt','tc','te','motif','atcd_med','atcd_obs','ta','pouls','temp','hu','tv','pde_aspect','uree','creat','tgo','tgp','hemostase','ionogramme','serologies','autres','hb','plq','gb','epf','bpm','avis_specialises'];
+    fields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && data[id] !== undefined) {
+        el.value = data[id] || '';
+      }
+    });
+
+    // Radios et checkboxes
+    const radioNames = ['cu','pde','presentation','acf','placenta','liquide'];
+    radioNames.forEach(name => {
+      const radios = document.querySelectorAll(`input[name="${name}"]`);
+      radios.forEach(r => {
+        r.checked = (r.value === data[name]);
+      });
+    });
+
+    // Checkboxes labstix et rcf
+    ['labstix','rcf'].forEach(name => {
+      const checks = document.querySelectorAll(`input[name="${name}"]`);
+      const values = data[name] || [];
+      checks.forEach(c => {
+        c.checked = values.includes(c.value);
+      });
+    });
+  }
+
+  function cancelEdit() {
+    editPatientId = null;
+    showList();
   }
 
   function showList() {
@@ -946,9 +1008,9 @@
   function setDefaultDates() {
     const today = new Date().toISOString().split('T')[0];
     const ddrField = document.getElementById('ddr');
-    if (ddrField) ddrField.value = today;
+    if (ddrField && !ddrField.value) ddrField.value = today;
     const pdeHeureField = document.getElementById('pde_heure');
-    if (pdeHeureField) {
+    if (pdeHeureField && !pdeHeureField.value) {
       const now = new Date();
       pdeHeureField.value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
     }
@@ -970,7 +1032,7 @@
       hb: val('hb'), plq: val('plq'), gb: val('gb'),
       hemostase: val('hemostase'), uree: val('uree'), creat: val('creat'), tgo: val('tgo'), tgp: val('tgp'),
       ionogramme: val('ionogramme'), serologies: val('serologies'), autres: val('autres'),
-      avis_specialises: val('avis_specialises'), // NOUVEAU
+      avis_specialises: val('avis_specialises'),
       presentation: radio('presentation'), acf: radio('acf'), bpm: val('bpm'),
       placenta: radio('placenta'), liquide: radio('liquide'), epf: val('epf')
     };
@@ -979,18 +1041,43 @@
   function saveAndShowReport() {
     const data = collectFormData();
     if (!data.nom && !confirm('Le nom est vide. Continuer ?')) return;
-    const saved = addPatient(data);
-    showList();
-    showReport(saved);
+
+    let saved;
+    if (editPatientId) {
+      // Mise à jour
+      saved = updatePatient(editPatientId, data);
+      editPatientId = null;
+      showList();
+      if (saved) showReport(saved);
+    } else {
+      // Nouveau patient
+      saved = addPatient(data);
+      showList();
+      showReport(saved);
+    }
   }
+
+  // ====== AFFICHAGE DU RAPPORT ======
+  let currentPatientId = null;
 
   function viewPatient(id) {
     const patients = getPatients();
     const patient = patients.find(p => p.id === id);
-    if (patient) showReport(patient);
+    if (patient) {
+      currentPatientId = id;
+      showReport(patient);
+    }
+  }
+
+  function editCurrentPatient() {
+    if (currentPatientId) {
+      fermerModal();
+      showForm(currentPatientId);
+    }
   }
 
   function showReport(data) {
+    currentPatientId = data.id;
     const setText = (id, val) => {
       const el = document.getElementById(id);
       if (el) el.textContent = (val && val.trim() !== '') ? val : '-';
@@ -1045,7 +1132,6 @@
     if (data.serologies) seroAutres.push(`Sérologies: ${data.serologies}`);
     if (data.autres) seroAutres.push(`Autres: ${data.autres}`);
     setText('out-sero-autres', seroAutres.join('  |  '));
-    // Avis spécialisés
     setText('out-avis', data.avis_specialises);
     setText('out-presentation', data.presentation);
     setText('out-acf', data.acf ? `${data.acf}${data.bpm ? ' ('+data.bpm+' BPM)' : ''}` : '-');
@@ -1087,7 +1173,5 @@
     }
   });
 </script>
-
-<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));}</script>
 </body>
 </html>
